@@ -1,251 +1,119 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { 
-  Send, 
-  Link as LinkIcon, 
-  Check, 
-  MessageSquare,
-  AlertCircle,
-  Copy
-} from "lucide-react"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import * as z from "zod"
-
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { Link as LinkIcon, PlusCircle } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
-import { CURRENT_MERCHANT } from "@/app/lib/mock-data"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { PaymentLinkForm } from '@/components/PaymentLinkForm'
+import { PaymentLink } from '@/lib/types'
+import { useLanguage } from '@/lib/language'
+import { PAYMENT_PROVIDERS, PaymentProvider } from '@/lib/config'
 
-const formSchema = z.object({
-  customerName: z.string().min(2, "Le nom du client est requis"),
-  whatsappNumber: z.string().min(9, "Numéro WhatsApp invalide (ex: +22177...)"),
-  productDescription: z.string().min(5, "Description trop courte"),
-  amount: z.coerce.number().min(100, "Le montant minimum est de 100 FCFA"),
-})
-
-export default function CreatePaymentLink() {
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [generatedLink, setGeneratedLink] = useState<string | null>(null)
-  const { toast } = useToast()
+export default function CreatePaymentLinkPage() {
+  const { t } = useLanguage()
   const router = useRouter()
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [recentLinks, setRecentLinks] = useState<PaymentLink[]>([])
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      customerName: "",
-      whatsappNumber: "+221",
-      productDescription: "",
-      amount: 0,
-    },
-  })
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsGenerating(true)
-    
-    // Simulate API delay for link generation
-    setTimeout(() => {
-      // Mock Wave Link Generation
-      // Pattern: pay.wave.com/m/[b2b_id]/[amount]/[ref]
-      const ref = values.productDescription.replace(/\s+/g, '-').substring(0, 10)
-      const link = `https://pay.wave.com/m/${CURRENT_MERCHANT.b2bId}/${values.amount}/${ref}`
-      
-      setGeneratedLink(link)
-      setIsGenerating(false)
-      
-      toast({
-        title: "Lien généré avec succès",
-        description: "Vous pouvez maintenant l'envoyer via WhatsApp.",
-      })
-    }, 1200)
-  }
-
-  const handleSendWhatsApp = () => {
-    const values = form.getValues()
-    const message = `Bonjour ${values.customerName},
-Merci pour votre commande : ${values.productDescription}.
-Montant à payer : ${values.amount} FCFA.
-Veuillez finaliser votre paiement via le lien sécurisé suivant :
-${generatedLink}
-Merci pour votre confiance.`
-
-    const encodedMessage = encodeURIComponent(message)
-    const whatsappUrl = `https://wa.me/${values.whatsappNumber.replace(/\+/g, '')}?text=${encodedMessage}`
-    
-    window.open(whatsappUrl, '_blank')
-    
-    toast({
-      title: "Notification WhatsApp",
-      description: "Redirection vers WhatsApp en cours...",
-    })
-
-    // Simulated: Save transaction to "db"
-    // In a real app, we'd call a server action here
-    setTimeout(() => {
-      router.push('/dashboard')
-    }, 2000)
-  }
-
-  const copyToClipboard = () => {
-    if (generatedLink) {
-      navigator.clipboard.writeText(generatedLink)
-      toast({
-        title: "Copié !",
-        description: "Le lien a été copié dans le presse-papier.",
-      })
-    }
+  const handleLinkCreated = (link: PaymentLink) => {
+    setRecentLinks([link, ...recentLinks].slice(0, 5))
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold text-primary">Créer un Paiement</h1>
+        <h1 className="text-3xl font-headline font-bold text-primary flex items-center gap-2">
+          <LinkIcon className="h-8 w-8" />
+          {t('links.newLink')}
+        </h1>
         <p className="text-muted-foreground mt-1">
-          Remplissez les détails pour générer un lien unique.
+          {t('app.tagline')}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle>Détails de la demande</CardTitle>
-            <CardDescription>Informations sur le client et le produit.</CardDescription>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-2 border-dashed border-muted-foreground/25 hover:border-blue-500 transition-colors cursor-pointer" onClick={() => setIsFormOpen(true)}>
+          <CardHeader className="text-center">
+            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <PlusCircle className="h-8 w-8 text-blue-600" />
+            </div>
+            <CardTitle>{t('links.createRequest')}</CardTitle>
+            <CardDescription>
+              Créez un nouveau lien de paiement en quelques clics
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="customerName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nom du Client</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Jean Dupont" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="whatsappNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Numéro WhatsApp</FormLabel>
-                      <FormControl>
-                        <Input placeholder="+221770000000" {...field} />
-                      </FormControl>
-                      <FormDescription>Format international requis.</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="productDescription"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description du Produit</FormLabel>
-                      <FormControl>
-                        <Textarea placeholder="Ex: Chaussures Nike Air Max" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Montant (FCFA)</FormLabel>
-                      <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isGenerating}>
-                  {isGenerating ? (
-                    <>
-                      <div className="animate-spin mr-2 h-4 w-4 border-2 border-white/20 border-t-white rounded-full" />
-                      Génération...
-                    </>
-                  ) : (
-                    <>
-                      <LinkIcon className="mr-2 h-4 w-4" />
-                      Générer le lien Wave
-                    </>
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
         </Card>
 
-        <div className="space-y-6">
-          <Card className={`border-none shadow-sm transition-all duration-500 ${!generatedLink ? 'opacity-50 pointer-events-none grayscale' : 'scale-105 border-primary/20'}`}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Check className="text-green-500 w-5 h-5" />
-                Lien Prêt
-              </CardTitle>
-              <CardDescription>Voici votre lien de paiement Wave sécurisé.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="p-4 bg-muted rounded-lg flex items-center justify-between gap-4 border">
-                <code className="text-xs truncate text-primary font-mono">{generatedLink || "https://pay.wave.com/..."}</code>
-                <Button variant="ghost" size="icon" onClick={copyToClipboard} disabled={!generatedLink}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <h4 className="font-semibold text-sm">Action rapide :</h4>
-                <Button 
-                  onClick={handleSendWhatsApp}
-                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white border-none"
-                  disabled={!generatedLink}
-                >
-                  <MessageSquare className="mr-2 h-4 w-4" />
-                  Notifier par WhatsApp
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-none shadow-sm bg-blue-50/50">
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <AlertCircle className="w-4 h-4 text-blue-600" />
-                Info Wave B2B
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="text-xs text-muted-foreground space-y-2">
-              <p>Ce lien est lié à votre compte marchand Wave :</p>
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Compte: {CURRENT_MERCHANT.waveAccountNumber}</li>
-                <li>Identifiant: {CURRENT_MERCHANT.b2bId}</li>
-              </ul>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Moyens de paiement disponibles</CardTitle>
+            <CardDescription>
+              {Object.keys(PAYMENT_PROVIDERS).length} opérateurs supportés
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              {(Object.keys(PAYMENT_PROVIDERS) as PaymentProvider[]).map((provider) => (
+                <div key={provider} className="flex items-center gap-2 p-3 rounded-lg border bg-card">
+                  <span className="text-2xl">{PAYMENT_PROVIDERS[provider].icon}</span>
+                  <span className="text-sm font-medium">{t(`providers.${provider}`)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {recentLinks.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Liens récemment créés</CardTitle>
+            <CardDescription>
+              Vos {recentLinks.length} derniers liens de paiement
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {recentLinks.map((link) => (
+                <div key={link.id} className="flex items-center justify-between p-4 rounded-lg border bg-card">
+                  <div className="space-y-1">
+                    <p className="font-medium">{link.name}</p>
+                    <p className="text-sm text-muted-foreground">{link.description}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{link.amount} FCFA</span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <span>{PAYMENT_PROVIDERS[link.provider].icon}</span>
+                        <span>{t(`providers.${link.provider}`)}</span>
+                      </span>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => navigator.clipboard.writeText(link.deepLink)}>
+                    Copier le lien
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <PaymentLinkForm
+        open={isFormOpen}
+        onOpenChange={setIsFormOpen}
+        onLinkCreated={handleLinkCreated}
+      />
     </div>
   )
 }
