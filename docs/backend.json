@@ -1,0 +1,271 @@
+{
+  "entities": {
+    "Merchant": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Merchant",
+      "type": "object",
+      "description": "Represents a seller or e-business using the LIVEPAY platform to generate and manage payment requests.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Merchant entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the merchant, used for communication and login (authentication managed externally).",
+          "format": "email"
+        },
+        "companyName": {
+          "type": "string",
+          "description": "The registered name of the merchant's e-business or company."
+        },
+        "whatsappNumber": {
+          "type": "string",
+          "description": "The WhatsApp number associated with the merchant's business for notifications."
+        },
+        "waveB2bAccountIdentifier": {
+          "type": "string",
+          "description": "The B2B identifier for the merchant's Wave account (e.g., M_sn_7kcELqHS_AKN)."
+        },
+        "waveB2bAccountNumber": {
+          "type": "string",
+          "description": "The specific account number for the merchant's Wave B2B account (e.g., SN 38 26 08 81)."
+        },
+        "wavePhoneNumber": {
+          "type": "string",
+          "description": "The primary Wave phone number linked to the merchant's account (e.g., +221705000505)."
+        },
+        "pricingPlan": {
+          "type": "string",
+          "description": "The pricing model chosen by or assigned to the merchant. Can be 'COMMISSION_PER_TRANSACTION' or 'MONTHLY_SUBSCRIPTION'."
+        },
+        "commissionRate": {
+          "type": "number",
+          "description": "The percentage commission charged per transaction if the pricingPlan is 'COMMISSION_PER_TRANSACTION'."
+        },
+        "subscriptionEndDate": {
+          "type": "string",
+          "description": "The date when the merchant's monthly subscription ends, if the pricingPlan is 'MONTHLY_SUBSCRIPTION'.",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the merchant account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating the last time the merchant's information was updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "companyName",
+        "waveB2bAccountIdentifier",
+        "waveB2bAccountNumber",
+        "wavePhoneNumber",
+        "pricingPlan",
+        "createdAt"
+      ]
+    },
+    "PaymentRequest": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "PaymentRequest",
+      "type": "object",
+      "description": "Represents a single payment request or transaction initiated by a merchant for a customer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the PaymentRequest entity."
+        },
+        "merchantId": {
+          "type": "string",
+          "description": "Reference to the Merchant who created this payment request. (Relationship: Merchant 1:N PaymentRequest)"
+        },
+        "amount": {
+          "type": "number",
+          "description": "The total amount of money to be paid for this transaction."
+        },
+        "currency": {
+          "type": "string",
+          "description": "The currency of the payment (e.g., 'XOF' for FCFA)."
+        },
+        "customerName": {
+          "type": "string",
+          "description": "The name of the customer for whom the payment request was created."
+        },
+        "customerWhatsappNumber": {
+          "type": "string",
+          "description": "The WhatsApp number of the customer to whom the payment link will be sent."
+        },
+        "productDescription": {
+          "type": "string",
+          "description": "A brief description of the product or service being purchased."
+        },
+        "wavePaymentLink": {
+          "type": "string",
+          "description": "The unique, secure Wave payment URL generated for this transaction.",
+          "format": "uri"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the payment request. Can be 'PENDING', 'PAID', 'FAILED', or 'CANCELLED'."
+        },
+        "paymentInitiatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the payment request was created and the link was generated.",
+          "format": "date-time"
+        },
+        "paymentCompletedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the payment was successfully completed by the customer.",
+          "format": "date-time"
+        },
+        "commissionCharged": {
+          "type": "number",
+          "description": "The amount of commission charged to the merchant for this specific transaction."
+        },
+        "whatsappMessageId": {
+          "type": "string",
+          "description": "An identifier for the WhatsApp message sent, useful for tracking via Wasender API."
+        },
+        "whatsappMessageStatus": {
+          "type": "string",
+          "description": "The delivery status of the WhatsApp message. Can be 'SENT', 'DELIVERED', 'READ', 'FAILED'."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when this payment request record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating the last time this payment request record was updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "merchantId",
+        "amount",
+        "currency",
+        "customerName",
+        "customerWhatsappNumber",
+        "productDescription",
+        "wavePaymentLink",
+        "status",
+        "createdAt"
+      ]
+    },
+    "ApiKey": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ApiKey",
+      "type": "object",
+      "description": "Represents an API key generated by a merchant to integrate LIVEPAY's functionality into their own applications.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the API Key entity. This will be the actual API key string."
+        },
+        "merchantId": {
+          "type": "string",
+          "description": "Reference to the Merchant who owns this API key. (Relationship: Merchant 1:N ApiKey)"
+        },
+        "name": {
+          "type": "string",
+          "description": "A user-friendly name for the API key, given by the merchant (e.g., 'Shopify Integration Key')."
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the API key. Can be 'ACTIVE' or 'REVOKED'."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the API key was generated.",
+          "format": "date-time"
+        },
+        "lastUsedAt": {
+          "type": "string",
+          "description": "Timestamp indicating the last time this API key was used.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "merchantId",
+        "name",
+        "status",
+        "createdAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/merchants/{merchantId}",
+        "definition": {
+          "entityName": "Merchant",
+          "schema": {
+            "$ref": "#/backend/entities/Merchant"
+          },
+          "description": "Collection racine pour les profils de marchands. Chaque document représente un e-business utilisant LIVEPAY et est indexé par l'UID de l'utilisateur Firebase. Le document inclut les informations de l'entreprise et les détails du compte Wave. Accès uniquement par le propriétaire du marchand (request.auth.uid == merchantId).",
+          "params": [
+            {
+              "name": "merchantId",
+              "description": "L'identifiant unique du marchand, correspondant à l'UID Firebase de l'utilisateur authentifié."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/merchants/{merchantId}/paymentRequests/{paymentRequestId}",
+        "definition": {
+          "entityName": "PaymentRequest",
+          "schema": {
+            "$ref": "#/backend/entities/PaymentRequest"
+          },
+          "description": "Sous-collection pour les demandes de paiement spécifiques créées par un marchand. Chaque document représente une transaction unique. Accès uniquement par le marchand parent. Inclut le 'merchantId' du parent pour l'indépendance de l'autorisation.",
+          "params": [
+            {
+              "name": "merchantId",
+              "description": "L'identifiant unique du marchand propriétaire de cette demande de paiement, correspondant à l'UID Firebase de l'utilisateur authentifié."
+            },
+            {
+              "name": "paymentRequestId",
+              "description": "L'identifiant unique de la demande de paiement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/merchants/{merchantId}/apiKeys/{apiKeyId}",
+        "definition": {
+          "entityName": "ApiKey",
+          "schema": {
+            "$ref": "#/backend/entities/ApiKey"
+          },
+          "description": "Sous-collection pour les clés API générées par un marchand pour l'intégration avec d'autres plateformes. Accès uniquement par le marchand parent. Inclut le 'merchantId' du parent pour l'indépendance de l'autorisation.",
+          "params": [
+            {
+              "name": "merchantId",
+              "description": "L'identifiant unique du marchand propriétaire de cette clé API, correspondant à l'UID Firebase de l'utilisateur authentifié."
+            },
+            {
+              "name": "apiKeyId",
+              "description": "L'identifiant unique de la clé API, qui est la clé elle-même."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "La structure Firestore pour LIVEPAY est conçue autour de l'entité centrale 'Merchant' (marchand), qui est le propriétaire de toutes les autres données. Cette approche hiérarchique garantit une sécurité robuste et une grande debuggabilité, tout en respectant les principes d'indépendance de l'autorisation et de ségrégation structurelle.\n\n**Justification du design :**\n\n1.  **Indépendance de l'autorisation (Authorization Independence):**\n    *   Chaque document dans les sous-collections (`paymentRequests` et `apiKeys`) inclut implicitement l'identifiant du marchand (`merchantId`) directement dans son chemin (e.g., `/merchants/{merchantId}/paymentRequests/{paymentRequestId}`).\n    *   De plus, les entités `PaymentRequest` et `ApiKey` contiennent explicitement un champ `merchantId`. Bien que le `merchantId` du chemin soit suffisant pour l'autorisation dans les règles Firestore (`request.auth.uid == merchantId`), la présence explicite dans le document offre une redondance utile pour l'indexation et la vérification côté application, et facilite les requêtes agrégées si nécessaire.\n    *   Cette conception élimine le besoin d'appels `get()` dans les règles de sécurité pour vérifier la propriété du parent, ce qui rend les règles atomiques, plus performantes et plus faciles à déboguer. Par exemple, lors de la création d'une `PaymentRequest`, aucune lecture du document `Merchant` parent n'est nécessaire pour valider que le créateur est bien le propriétaire du marchand.\n\n2.  **Ségrégation structurelle (Structural Segregation):**\n    *   Toutes les données relatives à un marchand spécifique (ses requêtes de paiement, ses clés API) sont regroupées sous son document `Merchant` dans des sous-collections dédiées. Cela garantit que tous les documents au sein d'une même collection ou sous-collection partagent les mêmes exigences de sécurité (accès par le propriétaire du marchand).\n    *   Par exemple, la collection `/merchants/{merchantId}/paymentRequests` ne contiendra que les demandes de paiement de `{merchantId}`, simplifiant les règles de sécurité à un simple contrôle `request.auth.uid == merchantId`.\n\n3.  **QAPs (Queries are not Filters):**\n    *   La structure utilise des chemins basés sur l'ID de l'utilisateur (`/merchants/{merchantId}/...`) pour les données privées du marchand. Cela permet aux règles de sécurité de valider l'accès en fonction de l'UID de l'utilisateur authentifié (`request.auth.uid`) et du `merchantId` présent dans le chemin.\n    *   Ainsi, une requête de liste sur `/merchants/{request.auth.uid}/paymentRequests` sera naturellement limitée aux documents appartenant à l'utilisateur authentifié, sans que Firestore n'ait à filtrer les résultats après avoir récupéré des données non autorisées. Cela assure que les requêtes `list` sont efficaces et sécurisées dès le départ.\n\n4.  **Modèle d'accès :**\n    *   **Données privées des marchands :** Les documents `Merchant` sont stockés sous `/merchants/{merchantId}`, où `merchantId` correspond à l'UID de l'utilisateur Firebase authentifié. Seul l'utilisateur propriétaire peut accéder à son propre profil de marchand.\n    *   **Données hiérarchiques et appartenant au marchand :** Les `PaymentRequest` et `ApiKey` sont des sous-collections de `Merchant`, utilisant les chemins `/merchants/{merchantId}/paymentRequests/{paymentRequestId}` et `/merchants/{merchantId}/apiKeys/{apiKeyId}`. Cette hiérarchie rend la propriété explicite et les règles de sécurité triviales à écrire et à comprendre.\n\n5.  **Clarté et prévisibilité des données :**\n    *   Les schémas incluent des champs d'état (`status`) explicites pour `PaymentRequest` et `ApiKey`, évitant ainsi l'inférence complexe à partir de multiples drapeaux ou timestamps.\n    *   Les noms de collections et les wildcards (`{merchantId}`, `{paymentRequestId}`, `{apiKeyId}`) sont sémantiques et descriptifs, renforçant la clarté de l'intention de la structure."
+  }
+}
