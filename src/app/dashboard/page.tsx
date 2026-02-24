@@ -34,6 +34,9 @@ export default function DashboardOverview() {
   const [stats, setStats] = useState({ total: 0, paid: 0, pending: 0, totalVolume: 0, byProvider: {} as Record<string, { total: number; paid: number; volume: number }> });
   const [recentLinks, setRecentLinks] = useState<any[]>([]);
 
+  // Check if current user is THE Super Admin (not just any admin)
+  const isSuperAdmin = user?.email === 'modousall1@gmail.com';
+
   useEffect(() => {
     loadStats();
   }, []);
@@ -94,7 +97,7 @@ export default function DashboardOverview() {
       </div>
 
       {/* User Role Banner */}
-      {isAdmin ? (
+      {isSuperAdmin ? (
         <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-purple-700">
@@ -120,8 +123,8 @@ export default function DashboardOverview() {
         </Card>
       )}
 
-      {/* Super Admin Info Card - Only for admin */}
-      {isAdmin && (
+      {/* Super Admin Info Card - ONLY for THE Super Admin */}
+      {isSuperAdmin && (
         <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
