@@ -12,11 +12,13 @@ export type UserRole = 'super_admin' | 'admin' | 'merchant' | 'api_user';
 export type MerchantBusinessType = 'fintech' | 'commerce' | 'platform' | 'institution' | 'marketplace';
 export type ComplianceLevel = 'basic' | 'standard' | 'enhanced' | 'premium';
 export type KYCStatus = 'pending' | 'submitted' | 'verified' | 'rejected' | 'expired';
-export type PaymentProvider = 'wave' | 'orange_money' | 'mtn_momo' | 'moov_money' | 'free_money' | 'pispi';
+export type PaymentProvider = 'wave' | 'orange_money' | 'mtn_momo' | 'moov_money' | 'free_money';
 export type PaymentStatus = 'pending' | 'processing' | 'success' | 'failed' | 'reversed' | 'refunded' | 'expired';
 export type PayoutStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
+export type TransferStatus = 'pending' | 'processing' | 'debited' | 'credited' | 'success' | 'failed' | 'reversed' | 'expired';
 export type Currency = 'XOF' | 'XAF' | 'GMD' | 'GNF';
-export type WebhookEventType = 'payment.success' | 'payment.failed' | 'payment.refunded' | 'payout.completed' | 'payout.failed' | 'merchant.verified' | 'merchant.rejected';
+export type UEMOACountry = 'SN' | 'CI' | 'ML' | 'BF' | 'NE' | 'TG' | 'BJ' | 'GW';
+export type WebhookEventType = 'payment.success' | 'payment.failed' | 'payment.refunded' | 'payout.completed' | 'payout.failed' | 'transfer.completed' | 'transfer.failed' | 'merchant.verified' | 'merchant.rejected';
 
 // ============================================================================
 // MERCHANT (MARCHAND)
@@ -435,4 +437,112 @@ export interface MerchantAnalytics {
     transactions: number;
     volume: number;
   }[];
+}
+
+// ============================================================================
+// DIRECT TRANSFER (TRANSFERT DIRECT - PAR DEEP LINK)
+// ============================================================================
+
+/**
+ * Transfert Direct - Modèle par Redirection (Deep Link)
+ * 
+ * LIVEPay génère un lien de paiement qui redirige le payeur vers
+ * l'application du provider (ex: Wave) pour effectuer le paiement.
+ * 
+ * Flux :
+ * 1. LIVEPay génère un deep link (ex: pay.wave.com/m/phone=xxx&amount=yyy)
+ * 2. Le payeur clique et est redirigé vers l'app Wave
+ * 3. Le payeur confirme le paiement dans l'app Wave
+ * 4. Wave notifie LIVEPay via webhook (si configuré)
+ * 
+ * Pas d'intégration API directe avec les providers.
+ * LIVEPay ne détient jamais les fonds.
+ */
+
+export interface DirectTransfer {
+  id: string;
+  merchant_id: string; // L'initiateur du transfert
+  
+  // Partie Payeur (celui qui envoie l'argent)
+  payer: TransferParty;
+  
+  // Partie Bénéficiaire (celui qui reçoit l'argent)
+  beneficiary: TransferParty;
+  
+  // Détails de la transaction
+  amount: number;
+  currency: Currency;
+  provider: PaymentProvider;
+  status: TransferStatus;
+  
+  // Deep Link généré pour le paiement
+  payment_deep_link: string; // URL de redirection vers l'app provider
+  deep_link_expires_at: string; // Expiration du lien
+  
+  // Références
+  internal_reference: string; // Référence LIVEPAY
+  
+  // Frais (pour information, gérés par le provider)
+  fee_amount: number;
+  payer_debits: number; // Montant total débité au payeur (amount + fees)
+  beneficiary_credits: number; // Montant net crédité au bénéficiaire
+  
+  // Métadonnées
+  description?: string;
+  metadata?: Record<string, unknown>;
+  idempotency_key?: string;
+  
+  // Suivi
+  paid_at?: string; // Quand le paiement a été effectué
+  completed_at?: string; // Quand le transfert est complet
+  
+  // Timestamps
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TransferParty {
+  phone: string; // Numéro de téléphone mobile money
+  name?: string; // Nom complet
+  email?: string; // Email (optionnel)
+  country?: UEMOACountry; // Code pays (SN, CI, ML, etc.)
+}
+
+export interface TransferFeeStructure {
+  type: 'percentage' | 'fixed' | 'free';
+  percentage?: number; // 0-100
+  fixed_amount?: number; // en FCFA
+  borne_by: 'payer' | 'beneficiary' | 'shared'; // Qui paie les frais
+}
+
+export interface DirectTransferInitInput {
+  merchant_id: string;
+  
+  // Informations du payeur
+  payer: {
+    phone: string;
+    name?: string;
+    email?: string;
+    country?: UEMOACountry;
+  };
+  
+  // Informations du bénéficiaire
+  beneficiary: {
+    phone: string;
+    name?: string;
+    email?: string;
+    country?: UEMOACountry;
+  };
+  
+  // Montant et devise
+  amount: number;
+  currency?: Currency;
+  
+  // Provider (wave, orange_money, etc.)
+  provider: PaymentProvider;
+  
+  // Métadonnées
+  description?: string;
+  metadata?: Record<string, unknown>;
+  idempotency_key?: string;
 }
