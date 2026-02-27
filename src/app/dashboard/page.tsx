@@ -1,354 +1,343 @@
+/**
+ * LIVEPay - Dashboard Super Admin Simplifié
+ * 
+ * Fonctionnalités essentielles :
+ * - Vue d'ensemble des statistiques
+ * - Gestion des marchands (liste + création)
+ * - Surveillance des transferts
+ * - Accès rapide aux outils
+ */
+
 "use client"
 
-import { Key, PlusCircle, Shield, Zap, Layers, Wallet, Users, CreditCard, CheckCircle2, Clock, AlertCircle, Building, Crown } from "lucide-react"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
-} from "@/components/ui/card"
+import { useState, useEffect } from "react"
+import { 
+  Users, 
+  CreditCard, 
+  TrendingUp, 
+  Activity,
+  Plus,
+  ExternalLink,
+  DollarSign,
+  CheckCircle,
+  Clock,
+  AlertCircle
+} from "lucide-react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { PaymentLinkList } from "@/components/PaymentLinkList"
-import { useLanguage } from "@/lib/language"
-import { LanguageSwitcher } from "@/components/LanguageSwitcher"
 import Link from "next/link"
-import { useState, useEffect } from "react"
-import { getPaymentLinks, getStats } from "@/lib/payment-links"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import { MERCHANT_CONFIG, SUPER_ADMIN_CONFIG, PAYMENT_PROVIDERS } from "@/lib/config"
-import { PaymentProvider } from "@/lib/types"
-import { useAuth } from "@/contexts/AuthContext"
+import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
+import { db } from "@/lib/firebase"
+import { COLLECTIONS } from "@/lib/firebase/models"
 
-export default function DashboardOverview() {
-  const { t } = useLanguage();
-  const { user, isAdmin } = useAuth();
-  const [stats, setStats] = useState({ total: 0, paid: 0, pending: 0, totalVolume: 0, byProvider: {} as Record<string, { total: number; paid: number; volume: number }> });
-  const [recentLinks, setRecentLinks] = useState<any[]>([]);
-
-  // Check if current user is THE Super Admin (not just any admin)
-  const isSuperAdmin = user?.email === 'modousall1@gmail.com';
+export default function SuperAdminDashboard() {
+  const [stats, setStats] = useState({
+    totalMerchants: 0,
+    totalTransfers: 0,
+    totalVolume: 0,
+    pendingTransfers: 0,
+  })
+  const [recentTransfers, setRecentTransfers] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadStats();
-  }, []);
+    loadDashboardData()
+  }, [])
 
-  const loadStats = () => {
-    const s = getStats();
-    setStats(s);
-    const links = getPaymentLinks().slice(0, 5);
-    setRecentLinks(links);
-  };
+  async function loadDashboardData() {
+    try {
+      // Charger les transferts récents
+      const transfersRef = collection(db, COLLECTIONS.TRANSFERS)
+      const q = query(transfersRef, orderBy('createdAt', 'desc'), limit(10))
+      const snapshot = await getDocs(q)
+      
+      const transfers = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+
+      // Calculer les statistiques
+      const totalVolume = transfers.reduce((sum, t) => sum + (t.amount || 0), 0)
+      const pendingCount = transfers.filter(t => t.status === 'pending').length
+
+      setStats({
+        totalMerchants: 2, // À remplacer par un vrai count
+        totalTransfers: transfers.length,
+        totalVolume,
+        pendingTransfers: pendingCount,
+      })
+
+      setRecentTransfers(transfers.slice(0, 5))
+      setLoading(false)
+    } catch (error) {
+      console.error('Error loading dashboard:', error)
+      setLoading(false)
+    }
+  }
 
   const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
-  };
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA'
+  }
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, 'default' | 'secondary' | 'destructive'> = {
-      pending: 'secondary',
-      paid: 'default',
-      expired: 'destructive',
-      cancelled: 'secondary',
-    };
+    const colors: Record<string, string> = {
+      pending: 'bg-yellow-100 text-yellow-800',
+      processing: 'bg-blue-100 text-blue-800',
+      success: 'bg-green-100 text-green-800',
+      failed: 'bg-red-100 text-red-800',
+    }
 
     const labels: Record<string, string> = {
-      pending: t('links.pending'),
-      paid: t('links.paid'),
-      expired: t('links.expired'),
-      cancelled: t('links.cancelled'),
-    };
+      pending: 'En attente',
+      processing: 'En cours',
+      success: 'Complété',
+      failed: 'Échoué',
+    }
 
     return (
-      <Badge variant={variants[status] || 'secondary'}>
-        {status === 'paid' && <CheckCircle2 className="w-3 h-3 mr-1" />}
+      <Badge className={colors[status] || 'bg-gray-100 text-gray-800'}>
         {status === 'pending' && <Clock className="w-3 h-3 mr-1" />}
+        {status === 'success' && <CheckCircle className="w-3 h-3 mr-1" />}
+        {status === 'failed' && <AlertCircle className="w-3 h-3 mr-1" />}
         {labels[status] || status}
       </Badge>
-    );
-  };
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <Activity className="w-12 h-12 mx-auto mb-4 text-blue-600 animate-spin" />
+          <p className="text-lg font-medium">Chargement...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-headline font-bold text-primary flex items-center gap-2">
-            <Wallet className="h-8 w-8" />
-            {t('dashboard.title')}
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            {t('app.subtitle')}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <LanguageSwitcher />
-          <Button asChild>
-            <Link href="/">{t('nav.home')}</Link>
-          </Button>
-        </div>
-      </div>
-
-      {/* User Role Banner */}
-      {isSuperAdmin ? (
-        <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-purple-700">
-              <Crown className="h-5 w-5" />
-              Super Administrateur
-            </CardTitle>
-            <CardDescription className="text-purple-600">
-              Vous avez accès à toutes les fonctionnalités de la plateforme
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      ) : (
-        <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-700">
-              <Shield className="h-5 w-5" />
-              Compte Marchand
-            </CardTitle>
-            <CardDescription className="text-green-600">
-              Bienvenue sur votre espace de vente LIVEPAY
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
-
-      {/* Super Admin Info Card - ONLY for THE Super Admin */}
-      {isSuperAdmin && (
-        <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5 text-purple-600" />
-              Administration - {t('admin.superAdmin')}
-            </CardTitle>
-            <CardDescription>
-              Informations de l'administrateur de la plateforme LIVEPAY
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <p className="text-sm text-muted-foreground">{t('admin.name')}</p>
-                <p className="font-semibold text-purple-700">{SUPER_ADMIN_CONFIG.name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('admin.email')}</p>
-                <p className="font-semibold text-purple-700">{SUPER_ADMIN_CONFIG.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">{t('admin.role')}</p>
-                <p className="font-semibold text-purple-700">{SUPER_ADMIN_CONFIG.role}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Merchant Info Card - For all users */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-blue-600" />
-            {t('merchant.title')}
-          </CardTitle>
-          <CardDescription>
-            Vos informations de compte marchand
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">{t('merchant.businessName')}</p>
-              <p className="font-semibold text-blue-700">{MERCHANT_CONFIG.businessName}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('merchant.accountNumber')}</p>
-              <p className="font-semibold text-blue-700">{MERCHANT_CONFIG.accountNumber}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('merchant.phoneNumber')}</p>
-              <p className="font-semibold text-blue-700">{MERCHANT_CONFIG.phoneNumber}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">{t('merchant.country')}</p>
-              <p className="font-semibold text-blue-700">{t(`countries.${MERCHANT_CONFIG.country}`)}</p>
-            </div>
-          </div>
-          <div className="mt-4 pt-4 border-t">
-            <p className="text-sm text-muted-foreground mb-1">{t('merchant.b2bIdentifier')}</p>
-            <p className="font-mono text-xs text-blue-700 break-all">{MERCHANT_CONFIG.b2bIdentifier}</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="shadow-sm border-none bg-white/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.totalVolume')}</CardTitle>
-            <Wallet className={cn("h-4 w-4", "text-blue-600")} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{formatAmount(stats.totalVolume)}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.revenue')}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-none bg-white/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.totalLinks')}</CardTitle>
-            <CreditCard className={cn("h-4 w-4", "text-indigo-600")} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.sales')}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-none bg-white/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">{t('dashboard.clients')}</CardTitle>
-            <Users className={cn("h-4 w-4", "text-green-600")} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{stats.paid}</div>
-            <p className="text-xs text-muted-foreground">{t('dashboard.uniqueClients')}</p>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-sm border-none bg-white/50 backdrop-blur">
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">En attente</CardTitle>
-            <Clock className={cn("h-4 w-4", "text-orange-600")} />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold font-headline">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground">Liens en attente de paiement</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Stats by Provider */}
-      {Object.keys(stats.byProvider).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Layers className="h-5 w-5" />
-              {t('dashboard.byProvider')}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              {(Object.keys(stats.byProvider) as PaymentProvider[]).map((provider) => (
-                <div key={provider} className="rounded-lg border p-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{PAYMENT_PROVIDERS[provider].icon}</span>
-                    <span className="font-medium text-sm">{t(`providers.${provider}`)}</span>
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Total:</span>
-                      <span className="font-medium">{stats.byProvider[provider].total}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Payés:</span>
-                      <span className="font-medium text-green-600">{stats.byProvider[provider].paid}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Volume:</span>
-                      <span className="font-medium">{formatAmount(stats.byProvider[provider].volume)}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Transactions */}
-      <Card className="border-none shadow-sm overflow-hidden">
-        <CardHeader>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white border-b">
+        <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>{t('dashboard.recentActivity')}</CardTitle>
-              <CardDescription>Vos dernières demandes de paiement générées.</CardDescription>
+              <h1 className="text-2xl font-bold text-gray-900">
+                LIVEPay Admin
+              </h1>
+              <p className="text-sm text-gray-500">
+                Super Admin - modousall1@gmail.com
+              </p>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {recentLinks.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center">
-              <p className="text-muted-foreground">Aucune transaction récente</p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/dashboard/merchants" className="flex items-center gap-2">
+                  <Users className="w-4 h-4" />
+                  Marchands
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/dashboard/transfers" className="flex items-center gap-2">
+                  <CreditCard className="w-4 h-4" />
+                  Transferts
+                </Link>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/dashboard/create" className="flex items-center gap-2">
+                  <Plus className="w-4 h-4" />
+                  Nouveau
+                </Link>
+              </Button>
             </div>
-          ) : (
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="pl-6">Client</TableHead>
-                  <TableHead>Moyen de paiement</TableHead>
-                  <TableHead>Produit</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead className="pr-6">Statut</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentLinks.map((link) => (
-                  <TableRow key={link.id} className="hover:bg-muted/30">
-                    <TableCell className="pl-6">
-                      <div className="font-medium">{link.buyerName || 'Client'}</div>
-                      <div className="text-xs text-muted-foreground">{link.buyerPhone || '-'}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                        <span>{PAYMENT_PROVIDERS[link.provider].icon}</span>
-                        <span>{t(`providers.${link.provider}`)}</span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate">{link.description}</TableCell>
-                    <TableCell className="font-mono">{link.amount} FCFA</TableCell>
-                    <TableCell className="pr-6">
-                      {getStatusBadge(link.status)}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Payment Links List */}
-      <PaymentLinkList onLinkCreated={() => loadStats()} />
-
-      {/* Quick Actions Card */}
-      <Card className="border-none shadow-sm flex flex-col justify-center items-center p-8 bg-gradient-to-r from-blue-50 to-indigo-50">
-        <div className="text-center space-y-4">
-          <div className="mx-auto w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center">
-            <Zap className="w-6 w-6" />
-          </div>
-          <div>
-            <h3 className="text-xl font-headline font-semibold">{t('dashboard.quickActions')}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Générez un lien de paiement et envoyez-le sur WhatsApp en un clic.
-            </p>
           </div>
         </div>
-      </Card>
+      </header>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Marchands
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalMerchants}</div>
+              <p className="text-xs text-muted-foreground">
+                Total inscrits
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Transferts
+              </CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.totalTransfers}</div>
+              <p className="text-xs text-muted-foreground">
+                Total transferts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                Volume Total
+              </CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatAmount(stats.totalVolume)}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sur tous les transferts
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                En Attente
+              </CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.pendingTransfers}</div>
+              <p className="text-xs text-muted-foreground">
+                Transferts en attente
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Transfers */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Activity className="w-5 h-5" />
+                Transferts Récents
+              </span>
+              <Button variant="ghost" size="sm" asChild>
+                <Link href="/dashboard/transfers" className="flex items-center gap-1">
+                  Voir tout
+                  <ExternalLink className="w-3 h-3" />
+                </Link>
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {recentTransfers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                Aucun transfert pour le moment
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {recentTransfers.map((transfer) => (
+                  <div
+                    key={transfer.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
+                        <TrendingUp className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{transfer.internalReference}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {transfer.payer?.name || transfer.payer?.phone} → {transfer.beneficiary?.name || transfer.beneficiary?.phone}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-medium">{formatAmount(transfer.amount)}</p>
+                        <p className="text-xs text-muted-foreground capitalize">
+                          {transfer.provider?.replace('_', ' ')}
+                        </p>
+                      </div>
+                      {getStatusBadge(transfer.status)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Gérer les Marchands</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Consulter la liste des marchands inscrits et leurs détails
+              </p>
+              <Button className="w-full" asChild>
+                <Link href="/dashboard/merchants">
+                  <Users className="w-4 h-4 mr-2" />
+                  Voir les marchands
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Créer un Transfert</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Initier un nouveau transfert par deep link
+              </p>
+              <Button className="w-full" variant="outline" asChild>
+                <Link href="/dashboard/create">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nouveau transfert
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Statistiques</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-4">
+                Voir les analytics détaillés et rapports
+              </p>
+              <Button className="w-full" variant="outline" asChild>
+                <Link href="/dashboard/reports">
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Voir les rapports
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-white border-t mt-12 py-6">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          <p>LIVEPay v3.0.0 - PSP Initiateur de Paiement</p>
+          <p className="mt-1">Propulsé par Firebase • Deep Links Mobile Money</p>
+        </div>
+      </footer>
     </div>
   )
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }

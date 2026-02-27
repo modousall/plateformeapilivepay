@@ -391,6 +391,28 @@ Propriétaire - Tous droits réservés LIVEPAY © 2024
 - **Status** : https://status.livepay.tech
 - **Support** : https://support.livepay.tech
 
+## 🚀 Déploiement & Infrastructure
+
+### Firebase App Hosting
+
+- **Backend** : `plateformeapilivepay`
+- **Projet** : `api-live-pay`
+- **URL Actuelle** : https://plateformeapilivepay--api-live-pay.us-central1.hosted.app
+- **Console Firebase** : https://console.firebase.google.com/project/api-live-pay/apphosting
+
+### Domaine Personnalisé
+
+**Statut :** ⏳ Configuration en cours
+
+Pour configurer `livepay.tech` comme domaine personnalisé, consultez :
+- 📄 [Guide Complet](CUSTOM_DOMAIN_SETUP.md)
+- ⚡ [Guide Rapide](QUICK_DOMAIN_SETUP.md)
+
+**URLs de Production (après configuration) :**
+- **Site Web** : https://livepay.tech
+- **API** : https://livepay.tech/api/v1
+- **Dashboard** : https://livepay.tech/dashboard
+
 ---
 
 **Développé avec ❤️ pour les e-commerçants de l'UEMOA**
