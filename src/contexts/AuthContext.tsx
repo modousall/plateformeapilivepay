@@ -44,8 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           displayName: firebaseUser.displayName,
           isSuperAdmin,
         })
+        // Créer un cookie de session pour le middleware Next.js
+        document.cookie = `__session=${firebaseUser.uid}; path=/; max-age=${60 * 60 * 24 * 7}; Secure; SameSite=Strict`
       } else {
         setUser(null)
+        // Supprimer le cookie de session
+        document.cookie = '__session=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
       }
       setLoading(false)
     })
@@ -55,26 +59,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      // Vérification simple pour le Super Admin
-      // Dans un environnement de production, activer Firebase Authentication
-      if (email === 'modousall1@gmail.com' && password === 'Passer123@') {
-        // Mode développement - pas de vraie auth Firebase
-        console.log('Login Super Admin réussi (mode développement)')
-        return
-      }
-      
-      // Si Firebase Auth est activé, utiliser la vraie authentification
+      // Utilisation de Firebase Authentication
       await signInWithEmailAndPassword(auth, email, password)
+      // L'utilisateur est maintenant connecté via Firebase
     } catch (error: any) {
       console.error('Login error:', error)
       
-      // Si c'est une erreur de configuration Firebase, accepter quand même le Super Admin
-      if (error.code === 'auth/configuration-not-found' && email === 'modousall1@gmail.com') {
-        console.log('Firebase Auth non configuré - Mode développement accepté')
-        return
+      // Messages d'erreur plus clairs
+      if (error.code === 'auth/invalid-credential') {
+        throw new Error('Email ou mot de passe incorrect')
+      } else if (error.code === 'auth/user-not-found') {
+        throw new Error('Aucun utilisateur trouvé avec cet email')
+      } else if (error.code === 'auth/wrong-password') {
+        throw new Error('Mot de passe incorrect')
+      } else if (error.code === 'auth/too-many-requests') {
+        throw new Error('Trop de tentatives. Veuillez réessayer plus tard')
+      } else {
+        throw new Error('Échec de la connexion. Veuillez réessayer.')
       }
-      
-      throw error
     }
   }
 

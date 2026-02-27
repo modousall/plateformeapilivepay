@@ -29,12 +29,10 @@ export default function LoginPage() {
     try {
       await login(email, password)
       
-      // Créer un cookie de session simple pour le développement
-      document.cookie = `__session=true; path=/; max-age=${60 * 60 * 24 * 7}` // 7 jours
-      
-      // Redirection vers dashboard
-      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/dashboard'
-      window.location.href = redirectUrl
+      // La connexion Firebase est gérée par onAuthStateChanged dans AuthContext
+      // Redirection automatique gérée par le middleware
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect')
+      window.location.href = redirectUrl || '/dashboard'
     } catch (err: any) {
       setError(err.message || "Échec de la connexion")
     } finally {
@@ -72,7 +70,7 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@livepay.tech"
+                  placeholder="votre@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -101,18 +99,6 @@ export default function LoginPage() {
               {loading ? "Connexion..." : "Se connecter"}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <p className="text-xs text-blue-800 font-medium mb-2">
-              📝 Identifiants de test :
-            </p>
-            <p className="text-xs text-blue-700">
-              Email : modousall1@gmail.com
-            </p>
-            <p className="text-xs text-blue-700">
-              Mot de passe : Passer123@
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
