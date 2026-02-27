@@ -11,9 +11,9 @@
 
 import { NextRequest } from 'next/server';
 import { generateQRCodeURL } from '@/lib/qr-code';
-
-// Données de référence (à remplacer par une base de données)
-import { transfers } from '../api/v1/transfers/route';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { COLLECTIONS } from '@/lib/firebase/models';
 
 export async function GET(
   request: NextRequest,
@@ -21,19 +21,24 @@ export async function GET(
 ) {
   try {
     const { transferId } = await params;
-    const transfer = transfers.find(t => t.id === transferId);
+    
+    // Récupérer depuis Firestore
+    const transferRef = doc(db, COLLECTIONS.TRANSFERS, transferId);
+    const transferDoc = await getDoc(transferRef);
 
-    if (!transfer) {
+    if (!transferDoc.exists()) {
       return new Response(getNotFoundHTML(), {
         status: 404,
         headers: { 'Content-Type': 'text/html' },
       });
     }
 
+    const transfer = transferDoc.data();
+
     // Vérifier si le lien est expiré
-    const isExpired = new Date(transfer.deep_link_expires_at) < new Date();
+    const isExpired = transfer.deepLinkExpiresAt?.toDate() < new Date();
     
-    const html = getPaymentPageHTML(transfer, isExpired);
+    const html = getPaymentPageHTML(transfer, isExpired, transferId);
     
     return new Response(html, {
       status: 200,
@@ -53,8 +58,8 @@ export async function GET(
 // GÉNÉRATION HTML
 // ============================================================================
 
-function getPaymentPageHTML(transfer: any, isExpired: boolean): string {
-  const qrCodeURL = generateQRCodeURL(transfer.payment_deep_link, { size: 256 });
+function getPaymentPageHTML(transfer: any, isExpired: boolean, transferId: string): string {
+  const qrCodeURL = generateQRCodeURL(transfer.paymentDeepLink, { size: 256 });
   const formattedAmount = new Intl.NumberFormat('fr-FR').format(transfer.amount);
   const providerName = getProviderDisplayName(transfer.provider);
   const statusColors: Record<string, string> = {
@@ -318,7 +323,7 @@ function getPaymentPageHTML(transfer: any, isExpired: boolean): string {
       </div>
 
       <div class="action-buttons">
-        <a href="${transfer.payment_deep_link}" class="btn btn-primary" target="_blank">
+        <a href="${transfer.paymentDeepLink}" class="btn btn-primary" target="_blank">
           🚀 Ouvrir l'application ${providerName}
         </a>
         <button class="btn btn-secondary" onclick="copyLink()">
@@ -348,7 +353,7 @@ function getPaymentPageHTML(transfer: any, isExpired: boolean): string {
 
   <script>
     function copyLink() {
-      const link = '${transfer.payment_deep_link}';
+      const link = '${transfer.paymentDeepLink}';
       navigator.clipboard.writeText(link).then(() => {
         alert('Lien copié !');
       }).catch(err => {
@@ -357,7 +362,7 @@ function getPaymentPageHTML(transfer: any, isExpired: boolean): string {
     }
 
     // Compte à rebours
-    const expiresAt = new Date('${transfer.deep_link_expires_at}').getTime();
+    const expiresAt = transfer.deepLinkExpiresAt?.toDate().getTime();
     
     function updateCountdown() {
       const now = new Date().getTime();

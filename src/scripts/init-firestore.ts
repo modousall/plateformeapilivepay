@@ -9,14 +9,15 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, Timestamp } from 'firebase/firestore';
 
-// Configuration Firebase
+// Configuration Firebase (NOUVEAU PROJET : api-live-pay)
 const firebaseConfig = {
-  apiKey: "AIzaSyC1rCtbDcbV3slNAw4LSgIGxD1yMfNQ6Lo",
-  authDomain: "studio-2004607225-f6a14.firebaseapp.com",
-  projectId: "studio-2004607225-f6a14",
-  storageBucket: "studio-2004607225-f6a14.firebasestorage.app",
-  messagingSenderId: "869931588586",
-  appId: "1:869931588586:web:138e7aaff905d5fdf37093"
+  apiKey: "AIzaSyBBXjKwvVNovBFwE92OsThtn0zwCgbmvYI",
+  authDomain: "api-live-pay.firebaseapp.com",
+  projectId: "api-live-pay",
+  storageBucket: "api-live-pay.firebasestorage.app",
+  messagingSenderId: "643595999695",
+  appId: "1:643595999695:web:4390d63335ce5245c29aba",
+  measurementId: "G-ZWNNP3K6FV"
 };
 
 // Initialiser Firebase
