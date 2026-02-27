@@ -2,10 +2,84 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // MODE INITIALISATION - Autoriser tout temporairement
-    // IMPORTANT: Remplacer par les règles complètes après initialisation
-    match /{document=**} {
-      allow read, write: if true;
+    // ========================================================================
+    // FONCTIONS UTILITAIRES
+    // ========================================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && 
+             request.auth.token.email == 'modousall1@gmail.com';
+    }
+    
+    // ========================================================================
+    // TRANSFERS
+    // ========================================================================
+    
+    match /transfers/{transferId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
+    }
+    
+    // ========================================================================
+    // MERCHANTS
+    // ========================================================================
+    
+    match /merchants/{merchantId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin();
+      allow delete: if isSuperAdmin();
+    }
+    
+    // ========================================================================
+    // USERS
+    // ========================================================================
+    
+    match /users/{userId} {
+      allow read: if isAuthenticated() && 
+                     (userId == request.auth.uid || isSuperAdmin());
+      allow write: if false; // Lecture seule
+    }
+    
+    // ========================================================================
+    // WEBHOOKS
+    // ========================================================================
+    
+    match /webhooks/{webhookId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // ========================================================================
+    // WEBHOOK LOGS
+    // ========================================================================
+    
+    match /webhook_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if true; // Système
+      allow update, delete: if false;
+    }
+    
+    // ========================================================================
+    // API KEYS
+    // ========================================================================
+    
+    match /api_keys/{keyId} {
+      allow read, write: if isAuthenticated();
+    }
+    
+    // ========================================================================
+    // STATS AGGREGATES
+    // ========================================================================
+    
+    match /stats_aggregates/{aggregateId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Système
     }
   }
 }

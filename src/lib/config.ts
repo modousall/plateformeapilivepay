@@ -1,9 +1,18 @@
-import { SuperAdminConfig, MerchantConfig } from './types';
+import { SuperAdminConfig, MerchantConfig, PaymentProvider, UEMOACountry } from './types';
 
 export const SUPER_ADMIN_CONFIG: SuperAdminConfig = {
   email: 'modousall1@gmail.com',
   name: 'Mr Modou SALL',
   role: 'Super Administrateur',
+};
+
+export const PAYMENT_PROVIDERS: Record<PaymentProvider, { name: string; color: string; icon: string; countries: UEMOACountry[] }> = {
+  wave: {
+    name: 'Wave',
+    color: 'bg-blue-500',
+    icon: '💙',
+    countries: ['SN', 'CI'],
+  },
 };
 
 export const MERCHANT_CONFIG: MerchantConfig = {

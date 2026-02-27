@@ -10,7 +10,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "firebase:init": "tsx src/scripts/init-firestore.ts"
+    "firebase:init": "tsx src/scripts/init-firestore.ts",
+    "firebase:create-admin": "tsx src/scripts/create-super-admin.ts"
   },
   "dependencies": {
     "@genkit-ai/google-genai": "^1.28.0",
