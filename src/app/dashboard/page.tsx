@@ -30,6 +30,7 @@ import Link from "next/link"
 import { collection, getDocs, query, orderBy, limit } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { COLLECTIONS } from "@/lib/firebase/models"
+import { useAuth } from "@/contexts/AuthContext"
 
 export default function SuperAdminDashboard() {
   const [stats, setStats] = useState({
@@ -40,6 +41,7 @@ export default function SuperAdminDashboard() {
   })
   const [recentTransfers, setRecentTransfers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const { user, logout } = useAuth()
 
   useEffect(() => {
     loadDashboardData()
@@ -131,6 +133,9 @@ export default function SuperAdminDashboard() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 mr-2">
+                {user?.email}
+              </span>
               <Button variant="outline" size="sm" asChild>
                 <Link href="/dashboard/merchants" className="flex items-center gap-2">
                   <Users className="w-4 h-4" />
@@ -142,6 +147,9 @@ export default function SuperAdminDashboard() {
                   <CreditCard className="w-4 h-4" />
                   Transferts
                 </Link>
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => logout()}>
+                Déconnexion
               </Button>
               <Button size="sm" asChild>
                 <Link href="/dashboard/create" className="flex items-center gap-2">

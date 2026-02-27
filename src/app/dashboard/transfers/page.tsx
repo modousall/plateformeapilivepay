@@ -6,12 +6,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { CreditCard, Search, ExternalLink } from "lucide-react"
+import { CreditCard, Search, ExternalLink, Filter, Download, Calendar } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { collection, getDocs, query, orderBy } from "firebase/firestore"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { collection, getDocs, query, orderBy, where, Timestamp } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { COLLECTIONS } from "@/lib/firebase/models"
 import Link from "next/link"
@@ -19,6 +20,10 @@ import Link from "next/link"
 export default function TransfersPage() {
   const [transfers, setTransfers] = useState<any[]>([])
   const [filter, setFilter] = useState('')
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [providerFilter, setProviderFilter] = useState('all')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -46,14 +51,54 @@ export default function TransfersPage() {
 
   const filteredTransfers = transfers.filter(t => {
     const search = filter.toLowerCase()
-    return (
+    const matchesSearch = 
       t.internalReference?.toLowerCase().includes(search) ||
       t.payer?.name?.toLowerCase().includes(search) ||
       t.payer?.phone?.toLowerCase().includes(search) ||
       t.beneficiary?.name?.toLowerCase().includes(search) ||
       t.beneficiary?.phone?.toLowerCase().includes(search)
-    )
+    
+    const matchesStatus = statusFilter === 'all' || t.status === statusFilter
+    const matchesProvider = providerFilter === 'all' || t.provider === providerFilter
+    
+    let matchesDate = true
+    if (dateFrom || dateTo) {
+      const transferDate = t.createdAt?.toDate()
+      if (dateFrom && transferDate) {
+        matchesDate = matchesDate && transferDate >= new Date(dateFrom)
+      }
+      if (dateTo && transferDate) {
+        matchesDate = matchesDate && transferDate <= new Date(dateTo + 'T23:59:59')
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesProvider && matchesDate
   })
+
+  const exportToCSV = () => {
+    const headers = ['ID', 'Référence', 'Date', 'Payeur', 'Bénéficiaire', 'Montant', 'Provider', 'Statut']
+    const rows = filteredTransfers.map(t => [
+      t.id,
+      t.internalReference,
+      t.createdAt?.toDate().toLocaleDateString('fr-FR'),
+      t.payer?.name || t.payer?.phone,
+      t.beneficiary?.name || t.beneficiary?.phone,
+      t.amount,
+      t.provider,
+      t.status
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `transfers_${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+  }
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA'
@@ -120,17 +165,108 @@ export default function TransfersPage() {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
-        {/* Search */}
+        {/* Filters */}
         <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par référence, payeur, bénéficiaire..."
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="pl-10"
-              />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="w-5 h-5" />
+              Filtres
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {/* Search */}
+              <div className="md:col-span-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Rechercher..."
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter */}
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Statut" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les statuts</SelectItem>
+                  <SelectItem value="pending">En attente</SelectItem>
+                  <SelectItem value="processing">En cours</SelectItem>
+                  <SelectItem value="success">Complété</SelectItem>
+                  <SelectItem value="failed">Échoué</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Provider Filter */}
+              <Select value={providerFilter} onValueChange={setProviderFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les providers</SelectItem>
+                  <SelectItem value="wave">Wave</SelectItem>
+                  <SelectItem value="orange_money">Orange Money</SelectItem>
+                  <SelectItem value="mtn_momo">MTN MoMo</SelectItem>
+                  <SelectItem value="moov_money">Moov Money</SelectItem>
+                  <SelectItem value="free_money">Free Money</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* Export Button */}
+              <Button onClick={exportToCSV} variant="outline" className="flex items-center gap-2">
+                <Download className="w-4 h-4" />
+                Export CSV
+              </Button>
+            </div>
+
+            {/* Date Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div>
+                <Label htmlFor="dateFrom">Du</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="dateFrom"
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="dateTo">Au</Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="dateTo"
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <div className="flex items-end">
+                <Button 
+                  onClick={() => {
+                    setDateFrom('')
+                    setDateTo('')
+                    setFilter('')
+                    setStatusFilter('all')
+                    setProviderFilter('all')
+                  }}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  Réinitialiser
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>

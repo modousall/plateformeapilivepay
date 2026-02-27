@@ -1,40 +1,39 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-
-const publicPaths = ['/', '/login', '/register'];
-const authPaths = ['/login', '/register'];
+import { NextResponse } from 'next/server'
+import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  // Check if user is authenticated (from localStorage via cookie)
-  const userCookie = request.cookies.get('livepay_user');
-  const isAuthenticated = !!userCookie;
-
-  // Redirect authenticated users away from auth pages
-  if (isAuthenticated && authPaths.some(path => pathname.startsWith(path))) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+  const { pathname } = request.nextUrl
+  
+  // Vérifier si l'utilisateur est connecté (via cookie Firebase)
+  const hasAuthCookie = request.cookies.has('__session')
+  
+  // Pages publiques
+  const publicPaths = ['/', '/login', '/register', '/pay']
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
+  
+  // Pages admin protégées
+  const adminPaths = ['/dashboard']
+  const isAdminPath = adminPaths.some(path => pathname.startsWith(path))
+  
+  // Si page admin et pas authentifié → rediriger vers login
+  if (isAdminPath && !hasAuthCookie) {
+    const loginUrl = new URL('/login', request.url)
+    loginUrl.searchParams.set('redirect', pathname)
+    return NextResponse.redirect(loginUrl)
   }
-
-  // Redirect unauthenticated users to login
-  if (!isAuthenticated && !publicPaths.some(path => pathname.startsWith(path))) {
-    const url = new URL('/login', request.url);
-    url.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(url);
+  
+  // Si login et déjà authentifié → rediriger vers dashboard
+  if (pathname === '/login' && hasAuthCookie) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
-
-  return NextResponse.next();
+  
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+    '/dashboard/:path*',
+    '/login',
+    '/pay/:path*',
   ],
-};
+}

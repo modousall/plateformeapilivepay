@@ -6,12 +6,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Users, Mail, Phone, Building, Calendar } from "lucide-react"
+import { Users, Mail, Phone, Building, Calendar, Plus } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { collection, getDocs } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { COLLECTIONS } from "@/lib/firebase/models"
+import Link from "next/link"
 
 export default function MerchantsPage() {
   const [merchants, setMerchants] = useState<any[]>([])
@@ -83,6 +85,12 @@ export default function MerchantsPage() {
                 {merchants.length} marchand(s) inscrit(s)
               </p>
             </div>
+            <Button size="sm" asChild>
+              <Link href="/dashboard/merchants/create" className="flex items-center gap-2">
+                <Plus className="w-4 h-4" />
+                Nouveau marchand
+              </Link>
+            </Button>
           </div>
         </div>
       </header>
