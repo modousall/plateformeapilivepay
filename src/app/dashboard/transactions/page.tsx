@@ -24,7 +24,6 @@ import {
 } from "@/components/ui/table"
 import { getPaymentLinks, PaymentLink } from '@/lib/payment-links'
 import { useLanguage } from '@/lib/language'
-import { PAYMENT_PROVIDERS } from '@/lib/config'
 import { format } from 'date-fns'
 import { fr } from 'date-fns/locale'
 
@@ -189,18 +188,10 @@ export default function TransactionsPage() {
               <Label>Opérateur</Label>
               <Select value={providerFilter} onValueChange={setProviderFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Tous les opérateurs" />
+                  <SelectValue placeholder="Provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les opérateurs</SelectItem>
-                  {Object.keys(PAYMENT_PROVIDERS).map((provider) => (
-                    <SelectItem key={provider} value={provider}>
-                      <span className="flex items-center gap-2">
-                        <span>{PAYMENT_PROVIDERS[provider as keyof typeof PAYMENT_PROVIDERS].icon}</span>
-                        <span>{t(`providers.${provider}`)}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="all">Wave</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -258,8 +249,8 @@ export default function TransactionsPage() {
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="flex items-center gap-1 w-fit">
-                        <span>{PAYMENT_PROVIDERS[link.provider].icon}</span>
-                        <span>{t(`providers.${link.provider}`)}</span>
+                        <span>💙</span>
+                        <span>Wave</span>
                       </Badge>
                     </TableCell>
                     <TableCell className="font-mono">

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useLanguage } from '@/lib/language';
 import { createPaymentLink } from '@/lib/payment-links';
 import { PaymentLink } from '@/lib/types';
-import { PaymentProvider } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -18,14 +17,6 @@ import {
 import { Label } from '@/components/ui/label';
 import { Copy, Check, Link as LinkIcon, MessageCircle } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { PAYMENT_PROVIDERS } from '@/lib/config';
 
 interface PaymentLinkFormProps {
   open: boolean;
@@ -38,7 +29,6 @@ export function PaymentLinkForm({ open, onOpenChange, onLinkCreated }: PaymentLi
   const [name, setName] = useState('');
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
-  const [provider, setProvider] = useState<PaymentProvider>('wave');
   const [buyerPhone, setBuyerPhone] = useState('');
   const [buyerName, setBuyerName] = useState('');
   const [buyerEmail, setBuyerEmail] = useState('');
@@ -52,7 +42,7 @@ export function PaymentLinkForm({ open, onOpenChange, onLinkCreated }: PaymentLi
       name,
       amount: parseInt(amount.replace(/\s/g, ''), 10),
       description,
-      provider,
+      provider: 'wave', // Wave uniquement
       buyerPhone,
       buyerName,
       buyerEmail: buyerEmail || undefined,
@@ -69,8 +59,7 @@ export function PaymentLinkForm({ open, onOpenChange, onLinkCreated }: PaymentLi
   };
 
   const handleShareWhatsApp = (link: PaymentLink) => {
-    const providerName = t(`providers.${link.provider}`);
-    const message = `Bonjour ${link.buyerName || 'cher client'},\n\nVoici votre lien de paiement LIVEPAY :\n${link.deepLink}\n\nMontant : ${link.amount} FCFA\nMoyen de paiement : ${providerName}\nDescription : ${link.description}\n\nMerci de votre confiance !`;
+    const message = `Bonjour ${link.buyerName || 'cher client'},\n\nVoici votre lien de paiement LIVEPAY :\n${link.deepLink}\n\nMontant : ${link.amount} FCFA\nMoyen de paiement : Wave 💙\nDescription : ${link.description}\n\nMerci de votre confiance !`;
     const encodedMessage = encodeURIComponent(message);
     const phone = link.buyerPhone?.replace(/[^0-9+]/g, '') || '';
     const whatsappUrl = `https://wa.me/${phone}?text=${encodedMessage}`;
@@ -98,7 +87,7 @@ export function PaymentLinkForm({ open, onOpenChange, onLinkCreated }: PaymentLi
             {t('links.newLink')}
           </DialogTitle>
           <DialogDescription>
-            {t('app.tagline')}
+            Créer un lien de paiement Wave - Sénégal & Côte d'Ivoire
           </DialogDescription>
         </DialogHeader>
 
@@ -131,22 +120,11 @@ export function PaymentLinkForm({ open, onOpenChange, onLinkCreated }: PaymentLi
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="provider">{t('links.provider')}</Label>
-                  <Select value={provider} onValueChange={(v) => setProvider(v as PaymentProvider)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t('links.providerPlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(Object.keys(PAYMENT_PROVIDERS) as PaymentProvider[]).map((p) => (
-                        <SelectItem key={p} value={p}>
-                          <span className="flex items-center gap-2">
-                            <span>{PAYMENT_PROVIDERS[p].icon}</span>
-                            <span>{t(`providers.${p}`)}</span>
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Provider</Label>
+                  <div className="flex items-center gap-2 p-2 border rounded bg-blue-50">
+                    <span className="text-xl">💙</span>
+                    <span className="text-sm font-medium">Wave</span>
+                  </div>
                 </div>
               </div>
 

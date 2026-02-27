@@ -5,7 +5,7 @@ import { Wallet, Zap, MessageSquare, ShieldCheck, ArrowRight, PlusCircle, Smartp
 import { Button } from "@/components/ui/button"
 import { useLanguage } from "@/lib/language"
 import { LanguageSwitcher } from "@/components/LanguageSwitcher"
-import { PAYMENT_PROVIDERS } from "@/lib/config"
+import { WAVE_CONFIG } from "@/lib/config"
 
 export default function LandingPage() {
   const { t } = useLanguage();
@@ -101,35 +101,27 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Payment Providers Section */}
-      <section id="providers" className="py-24 px-6 bg-muted/30">
+      {/* Payment Providers Section - Wave uniquement */}
+      <section id="providers" className="py-24 px-6 bg-blue-50">
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold">Moyens de paiement acceptés</h2>
-            <p className="text-muted-foreground text-lg">Tous les opérateurs Mobile Money de l'UEMOA + PI-SPI</p>
+            <h2 className="text-3xl md:text-5xl font-headline font-bold">Provider Supporté</h2>
+            <p className="text-muted-foreground text-lg">Wave - Sénégal & Côte d'Ivoire</p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-            {(Object.keys(PAYMENT_PROVIDERS) as Array<keyof typeof PAYMENT_PROVIDERS>).map((provider) => (
-              <div
-                key={provider}
-                className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-lg transition-all border border-transparent hover:border-blue-200 text-center space-y-3"
-              >
-                <div className="text-4xl">{PAYMENT_PROVIDERS[provider].icon}</div>
-                <h3 className="font-semibold text-sm">{t(`providers.${provider}`)}</h3>
-                <div className="flex flex-wrap justify-center gap-1">
-                  {PAYMENT_PROVIDERS[provider].countries.slice(0, 4).map((country) => (
-                    <span key={country} className="text-xs bg-muted px-2 py-1 rounded">
-                      {country}
-                    </span>
-                  ))}
-                  {PAYMENT_PROVIDERS[provider].countries.length > 4 && (
-                    <span className="text-xs bg-muted px-2 py-1 rounded">
-                      +{PAYMENT_PROVIDERS[provider].countries.length - 4}
-                    </span>
-                  )}
-                </div>
+          <div className="flex justify-center">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-blue-200 text-center space-y-4 max-w-sm">
+              <div className="w-20 h-20 mx-auto rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-5xl">💙</span>
               </div>
-            ))}
+              <h3 className="font-semibold text-xl">Wave</h3>
+              <div className="flex flex-wrap justify-center gap-2">
+                <span className="text-sm bg-blue-100 px-3 py-1 rounded-full">SN</span>
+                <span className="text-sm bg-blue-100 px-3 py-1 rounded-full">CI</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Plus de 10 millions d'utilisateurs en Afrique de l'Ouest
+              </p>
+            </div>
           </div>
         </div>
       </section>

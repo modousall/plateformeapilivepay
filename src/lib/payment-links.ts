@@ -7,8 +7,8 @@ const STORAGE_KEY = 'livepay_payment_links';
 
 export function createPaymentLink(input: CreatePaymentLinkInput): PaymentLink {
   const reference = generateReference();
+  // Wave uniquement - pas besoin du paramètre provider
   const deepLink = generateDeepLink(
-    input.provider,
     MERCHANT_CONFIG.b2bIdentifier,
     input.amount,
     reference,

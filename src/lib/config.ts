@@ -1,4 +1,4 @@
-import { SuperAdminConfig, MerchantConfig, PaymentProvider, UEMOACountry } from './types';
+import { SuperAdminConfig, MerchantConfig } from './types';
 
 export const SUPER_ADMIN_CONFIG: SuperAdminConfig = {
   email: 'modousall1@gmail.com',
@@ -22,75 +22,31 @@ export const PLATFORM_CONFIG = {
   supportPhone: '+221705000505',
 };
 
-export const PAYMENT_PROVIDERS: Record<PaymentProvider, {
-  name: string;
-  color: string;
-  icon: string;
-  countries: UEMOACountry[];
-  deepLinkPrefix: string;
-}> = {
-  wave: {
-    name: 'Wave',
-    color: 'bg-blue-500',
-    icon: '💙',
-    countries: ['SN', 'CI'],
-    deepLinkPrefix: 'https://pay.wave.com/m/',
-  },
-  orange_money: {
-    name: 'Orange Money',
-    color: 'bg-orange-500',
-    icon: '🧡',
-    countries: ['SN', 'CI', 'ML', 'BF', 'NE', 'TG', 'BJ'],
-    deepLinkPrefix: 'https://pay.orange.com/',
-  },
-  mtn_momo: {
-    name: 'MTN Mobile Money',
-    color: 'bg-yellow-500',
-    icon: '💛',
-    countries: ['SN', 'CI', 'BJ', 'NE'],
-    deepLinkPrefix: 'https://momo.mtn.com/',
-  },
-  moov_money: {
-    name: 'Moov Money',
-    color: 'bg-blue-400',
-    icon: '💠',
-    countries: ['SN', 'CI', 'NE', 'TG', 'BJ'],
-    deepLinkPrefix: 'https://moov.money/',
-  },
-  free_money: {
-    name: 'Free Money',
-    color: 'bg-purple-500',
-    icon: '💜',
-    countries: ['SN', 'ML'],
-    deepLinkPrefix: 'https://pay.free.sn/',
-  },
-  pispi: {
-    name: 'PI-SPI',
-    color: 'bg-green-600',
-    icon: '🏦',
-    countries: ['SN', 'CI', 'ML', 'BF', 'NE', 'TG', 'BJ', 'GW'],
-    deepLinkPrefix: 'https://pispi.ueoa.int/pay/',
-  },
+// Wave uniquement pour le moment
+export const WAVE_CONFIG = {
+  name: 'Wave',
+  color: 'bg-blue-500',
+  icon: '💙',
+  countries: ['SN', 'CI'] as const,
+  deepLinkPrefix: 'https://pay.wave.com/m',
 };
 
 export function generateDeepLink(
-  provider: PaymentProvider,
   merchantId: string,
   amount: number,
   reference: string,
   phoneNumber?: string
 ): string {
-  const providerConfig = PAYMENT_PROVIDERS[provider];
-  let url = `${providerConfig.deepLinkPrefix}${merchantId}`;
-  
+  let url = `${WAVE_CONFIG.deepLinkPrefix}/${merchantId}`;
+
   const params = new URLSearchParams();
   params.set('amount', amount.toString());
   params.set('reference', reference);
-  
+
   if (phoneNumber) {
     params.set('phone', phoneNumber.replace(/[^0-9+]/g, ''));
   }
-  
+
   const queryString = params.toString();
   return queryString ? `${url}?${queryString}` : url;
 }
@@ -105,18 +61,18 @@ export function formatAmountFCFA(amount: number): string {
   return new Intl.NumberFormat('fr-FR').format(Math.round(amount)) + ' FCFA';
 }
 
-export function getProviderColor(provider: PaymentProvider): string {
-  return PAYMENT_PROVIDERS[provider].color;
+export function getProviderColor(): string {
+  return WAVE_CONFIG.color;
 }
 
-export function getProviderIcon(provider: PaymentProvider): string {
-  return PAYMENT_PROVIDERS[provider].icon;
+export function getProviderIcon(): string {
+  return WAVE_CONFIG.icon;
 }
 
-export function getProviderName(provider: PaymentProvider): string {
-  return PAYMENT_PROVIDERS[provider].name;
+export function getProviderName(): string {
+  return WAVE_CONFIG.name;
 }
 
-export function isProviderAvailable(provider: PaymentProvider, country: UEMOACountry): boolean {
-  return PAYMENT_PROVIDERS[provider].countries.includes(country);
+export function isProviderAvailable(country: 'SN' | 'CI'): boolean {
+  return WAVE_CONFIG.countries.includes(country);
 }

@@ -2,15 +2,10 @@ export type PaymentLinkStatus = 'pending' | 'paid' | 'expired' | 'cancelled';
 
 export type Environment = 'production' | 'sandbox' | 'test';
 
-export type PaymentProvider = 
-  | 'wave'
-  | 'orange_money'
-  | 'mtn_momo'
-  | 'moov_money'
-  | 'free_money'
-  | 'pispi';
+// Wave uniquement pour le moment
+export type PaymentProvider = 'wave';
 
-export type UEMOACountry = 'SN' | 'CI' | 'ML' | 'BF' | 'NE' | 'TG' | 'BJ' | 'GW';
+export type UEMOACountry = 'SN' | 'CI';
 
 export interface SuperAdminConfig {
   email: string;
