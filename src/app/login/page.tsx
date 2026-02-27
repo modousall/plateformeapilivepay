@@ -28,7 +28,13 @@ export default function LoginPage() {
 
     try {
       await login(email, password)
-      router.push("/dashboard")
+      
+      // Créer un cookie de session simple pour le développement
+      document.cookie = `__session=true; path=/; max-age=${60 * 60 * 24 * 7}` // 7 jours
+      
+      // Redirection vers dashboard
+      const redirectUrl = new URLSearchParams(window.location.search).get('redirect') || '/dashboard'
+      window.location.href = redirectUrl
     } catch (err: any) {
       setError(err.message || "Échec de la connexion")
     } finally {

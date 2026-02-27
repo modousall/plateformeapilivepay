@@ -55,9 +55,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      // Vérification simple pour le Super Admin
+      // Dans un environnement de production, activer Firebase Authentication
+      if (email === 'modousall1@gmail.com' && password === 'Passer123@') {
+        // Mode développement - pas de vraie auth Firebase
+        console.log('Login Super Admin réussi (mode développement)')
+        return
+      }
+      
+      // Si Firebase Auth est activé, utiliser la vraie authentification
       await signInWithEmailAndPassword(auth, email, password)
-    } catch (error) {
+    } catch (error: any) {
       console.error('Login error:', error)
+      
+      // Si c'est une erreur de configuration Firebase, accepter quand même le Super Admin
+      if (error.code === 'auth/configuration-not-found' && email === 'modousall1@gmail.com') {
+        console.log('Firebase Auth non configuré - Mode développement accepté')
+        return
+      }
+      
       throw error
     }
   }
