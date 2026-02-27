@@ -202,18 +202,13 @@ export default function TransfersPage() {
                 </SelectContent>
               </Select>
 
-              {/* Provider Filter */}
+              {/* Provider Filter - Wave uniquement */}
               <Select value={providerFilter} onValueChange={setProviderFilter}>
                 <SelectTrigger>
                   <SelectValue placeholder="Provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tous les providers</SelectItem>
-                  <SelectItem value="wave">Wave</SelectItem>
-                  <SelectItem value="orange_money">Orange Money</SelectItem>
-                  <SelectItem value="mtn_momo">MTN MoMo</SelectItem>
-                  <SelectItem value="moov_money">Moov Money</SelectItem>
-                  <SelectItem value="free_money">Free Money</SelectItem>
+                  <SelectItem value="all">Wave</SelectItem>
                 </SelectContent>
               </Select>
 

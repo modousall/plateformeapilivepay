@@ -85,10 +85,10 @@ export async function createTransfer(
     currency: input.currency || 'XOF',
     provider: input.provider,
     status: 'pending',
-    paymentDeepLink: generateDeepLink(input.payer.phone, input.amount, input.provider),
-    deepLinkExpiresAt: Timestamp.fromDate(new Date(Date.now() + 900000)), // 15 minutes
+    paymentDeepLink: generateDeepLink(input.payer.phone, input.amount),
+    deepLinkExpiresAt: Timestamp.fromDate(new Date(Date.now() + 900000)),
     internalReference: generateReference('INT'),
-    feeAmount: Math.round(input.amount * 0.02), // 2% estimation
+    feeAmount: Math.round(input.amount * 0.02),
     payerDebits: Math.round(input.amount * 1.02),
     beneficiaryCredits: input.amount,
     description: input.description || null,
@@ -303,61 +303,16 @@ export async function cancelTransfer(id: string): Promise<void> {
 // ============================================================================
 
 /**
- * Génère un deep link pour un provider
+ * Génère un deep link Wave
  */
-function generateDeepLink(
-  phone: string,
-  amount: number,
-  provider: string
-): string {
+function generateDeepLink(phone: string, amount: number): string {
   const cleanPhone = phone.replace(/^\+/, '');
-  
-  const configs: Record<string, {
-    baseUrl: string;
-    phoneParam: string;
-    amountParam: string;
-    referenceParam?: string;
-  }> = {
-    wave: {
-      baseUrl: 'https://pay.wave.com/m',
-      phoneParam: 'phone',
-      amountParam: 'amount',
-      referenceParam: 'reference',
-    },
-    orange_money: {
-      baseUrl: 'https://pay.orange.com/m',
-      phoneParam: 'msisdn',
-      amountParam: 'amount',
-      referenceParam: 'ref',
-    },
-    mtn_momo: {
-      baseUrl: 'https://pay.mtn.com/m',
-      phoneParam: 'phone',
-      amountParam: 'amount',
-      referenceParam: 'ref',
-    },
-    moov_money: {
-      baseUrl: 'https://pay.moov.com/m',
-      phoneParam: 'phone',
-      amountParam: 'amount',
-    },
-    free_money: {
-      baseUrl: 'https://pay.freemoney.com/m',
-      phoneParam: 'phone',
-      amountParam: 'amount',
-    },
-  };
-
-  const config = configs[provider] || configs.wave;
   const params = new URLSearchParams();
-  params.set(config.phoneParam, cleanPhone);
-  params.set(config.amountParam, amount.toString());
+  params.set('phone', cleanPhone);
+  params.set('amount', amount.toString());
+  params.set('reference', generateReference('PAY'));
   
-  if (config.referenceParam) {
-    params.set(config.referenceParam, generateReference('PAY'));
-  }
-
-  return `${config.baseUrl}?${params.toString()}`;
+  return `https://pay.wave.com/m?${params.toString()}`;
 }
 
 /**

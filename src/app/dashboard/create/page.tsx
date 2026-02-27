@@ -1,24 +1,17 @@
+/**
+ * LIVEPay - Créer un Transfert (Wave uniquement)
+ */
+
 "use client"
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Link as LinkIcon, PlusCircle } from 'lucide-react'
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { PaymentLinkForm } from '@/components/PaymentLinkForm'
 import { PaymentLink } from '@/lib/types'
 import { useLanguage } from '@/lib/language'
-import { PAYMENT_PROVIDERS, PaymentProvider } from '@/lib/config'
 
 export default function CreatePaymentLinkPage() {
   const { t } = useLanguage()
@@ -38,7 +31,7 @@ export default function CreatePaymentLinkPage() {
           {t('links.newLink')}
         </h1>
         <p className="text-muted-foreground mt-1">
-          {t('app.tagline')}
+          Paiement par Wave - Sénégal & Côte d'Ivoire
         </p>
       </div>
 
@@ -50,26 +43,27 @@ export default function CreatePaymentLinkPage() {
             </div>
             <CardTitle>{t('links.createRequest')}</CardTitle>
             <CardDescription>
-              Créez un nouveau lien de paiement en quelques clics
+              Créez un nouveau lien de paiement Wave
             </CardDescription>
           </CardHeader>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Moyens de paiement disponibles</CardTitle>
+            <CardTitle>Provider Supporté</CardTitle>
             <CardDescription>
-              {Object.keys(PAYMENT_PROVIDERS).length} opérateurs supportés
+              Wave uniquement pour le moment
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {(Object.keys(PAYMENT_PROVIDERS) as PaymentProvider[]).map((provider) => (
-                <div key={provider} className="flex items-center gap-2 p-3 rounded-lg border bg-card">
-                  <span className="text-2xl">{PAYMENT_PROVIDERS[provider].icon}</span>
-                  <span className="text-sm font-medium">{t(`providers.${provider}`)}</span>
-                </div>
-              ))}
+            <div className="flex items-center gap-3 p-4 rounded-lg border bg-blue-50">
+              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center">
+                <span className="text-white font-bold text-xl">W</span>
+              </div>
+              <div>
+                <p className="font-medium">Wave</p>
+                <p className="text-sm text-muted-foreground">Sénégal & Côte d'Ivoire</p>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -94,8 +88,8 @@ export default function CreatePaymentLinkPage() {
                       <span>{link.amount} FCFA</span>
                       <span>•</span>
                       <span className="flex items-center gap-1">
-                        <span>{PAYMENT_PROVIDERS[link.provider].icon}</span>
-                        <span>{t(`providers.${link.provider}`)}</span>
+                        <span>💙</span>
+                        <span>Wave</span>
                       </span>
                     </div>
                   </div>
@@ -110,8 +104,8 @@ export default function CreatePaymentLinkPage() {
       )}
 
       <PaymentLinkForm
-        open={isFormOpen}
-        onOpenChange={setIsFormOpen}
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
         onLinkCreated={handleLinkCreated}
       />
     </div>

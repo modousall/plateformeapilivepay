@@ -24,6 +24,15 @@ import {
 } from '@/lib/firebase/transfers';
 import { Timestamp } from 'firebase/firestore';
 
+// Configuration Wave uniquement
+const WAVE_CONFIG = {
+  baseUrl: 'https://pay.wave.com/m',
+  phoneParam: 'phone',
+  amountParam: 'amount',
+  referenceParam: 'reference',
+  formatPhone: (phone: string) => phone.replace(/^\+/, ''),
+};
+
 // POST /api/v1/transfers - Initier un transfert par deep link
 export async function POST(request: NextRequest) {
   try {
@@ -51,7 +60,7 @@ export async function POST(request: NextRequest) {
       { field: 'beneficiary.phone', required: true, type: 'string', pattern: /^\+?[0-9\s-]{8,15}$/ },
       { field: 'amount', required: true, type: 'number', min: 100 },
       { field: 'currency', type: 'string', enum: ['XOF', 'XAF', 'GMD', 'GNF'] },
-      { field: 'provider', required: true, type: 'string', enum: ['wave', 'orange_money', 'mtn_momo', 'moov_money', 'free_money'] },
+      { field: 'provider', type: 'string', enum: ['wave'] }, // Wave uniquement pour le moment
       { field: 'description', type: 'string', maxLength: 500 },
     ]);
 
@@ -220,13 +229,6 @@ function firebaseTransferToApi(transfer: any): Transfer {
   } as Transfer;
 }
 
-function getProviderName(provider: PaymentProvider): string {
-  const names: Record<PaymentProvider, string> = {
-    wave: 'Wave',
-    orange_money: 'Orange Money',
-    mtn_momo: 'MTN Mobile Money',
-    moov_money: 'Moov Money',
-    free_money: 'Free Money',
-  };
-  return names[provider];
+function getProviderName(_provider: PaymentProvider): string {
+  return 'Wave';
 }
